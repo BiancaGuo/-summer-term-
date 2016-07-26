@@ -5,3 +5,208 @@ day1
 实现背景、飞机位图显示 
 git、diff工具使用
 
+DAY1
+
+一、#define TRANS_BK_COLOR RGB(255,255,255)
+if (!SetLayeredWindowAttributes(hwndFlighter, TRANS_BK_COLOR, 255, LWA_COLORKEY | LWA_ALPHA))//SetLayeredWindowAttributes()设置分层窗口透明度
+	{
+		GetLastError();
+	}
+
+/*****************************************************************************************************************************************************************
+
+LWA_ALPHA时：crKey参数无效，bAlpha参数有效；
+LWA_COLORKEY：窗体中的所有颜色为crKey的地方将变为透明，bAlpha参数无效。其常量值为1。
+LWA_ALPHA | LWA_COLORKEY：crKey的地方将变为全透明，而其它地方根据bAlpha参数确定透明度。
+
+/*****************************************************************************************************************************************************************
+
+二、CreateWindowEx（）
+/*****************************************************************************************************************************************************************
+CreateWindowEx函数创建一个层叠的，自动弹出的（pop－up）或是一个子窗口通过扩展格式。
+
+HWND CreateWindowEx(
+DWORD DdwExStyle,        //窗口的扩展风格
+LPCTSTR lpClassName,    //指向注册类名的指针
+LPCTSTR lpWindowName,   //指向窗口名称的指针
+DWORD dwStyle,          //窗口风格
+int x,                  //窗口的水平位置
+int y,                  //窗口的垂直位置
+int nWidth,             //窗口的宽度
+int nHeight,            //窗口的高度
+HWND hWndParent,        //父窗口的句柄
+HMENU hMenu,            //菜单的句柄或是子窗口的标识符
+HINSTANCE hInstance,    //应用程序实例的句柄
+LPVOID lpParam          //指向窗口的创建数据
+);
+
+
+/*****************************************************************************************************************************************************************
+
+三、WS_EX_LAYERED|WS_EX_TOPMOST
+    WS_POPUP|WS_VISIBLE, // 窗口的style，这个表示为top-level window 
+
+/*****************************************************************************************************************************************************************
+WS_EX_LAYERED:使窗体支持透明
+
+带有WS_EX_LAYERED风格的窗口也就是我们说的分层窗口，主要是为了了实现异形窗口和窗口整体透明。
+
+若果要实现异形窗口则必须要设置这个风格，然后使用UpdateLayeredWindow函数来绘制，这样才能将控件的透明色和窗口后面的图像进行融合，从而绘制出带有透明效果的窗口
+
+而要实现窗口的整体透明，则需要首先设置WS_EX_LAYERED风格，然后调用SetLayeredWindowAttribute函数设置透明度
+
+
+以上所说的要想搞和透明相关的东西则必须设置这个分层风格，注意：
+
+1、一旦调用UpdateLayeredWindow函数，WM_PAINT消息将失效，如果界面需要更新，则需要自己调用UpdateLayeredWindow函数
+
+2、子窗口无法应用WS_EX_LAYERED风格，如果应用这个风格，将无法实现透明效果。也就是说这个窗口必须是非WS_CHILD；
+
+
+
+WS_EX_TOPMOST:窗口置顶
+WS_POPUP|WS_VISIBLE： 弹窗样式
+
+
+
+/*****************************************************************************************************************************************************************
+
+四、显示窗口：ShowWindow(hwndFlighter, SW_SHOW);//SW_HIDE(隐藏)
+
+/*****************************************************************************************************************************************************************
+
+BOOL ShowWindow（HWND hWnd, int nCmdShow);
+
+hWnd:指窗口句柄。
+nCmdShow：指定窗口如何显示。如果发送应用程序的程序提供了STARTUPINFO结构，则应用程序第一次调用ShowWindow时该参数被忽略。否则，在第一次调用ShowWindow函数时，该值应为在函数WinMain中nCmdShow参数。在随后的调用中，该参数可以为下列值之一：
+SW_FORCEMINIMIZE：在WindowNT5.0中最小化窗口，即使拥有窗口的线程被挂起也会最小化。在从其他线程最小化窗口时才使用这个参数。
+SW_HIDE：隐藏窗口并激活其他窗口。
+SW_MAXIMIZE：最大化指定的窗口。
+SW_MINIMIZE：最小化指定的窗口并且激活在Z序中的下一个顶层窗口。
+SW_RESTORE：激活并显示窗口。如果窗口最小化或最大化，则系统将窗口恢复到原来的尺寸和位置。在恢复最小化窗口时，应用程序应该指定这个标志。
+SW_SHOW：在窗口原来的位置以原来的尺寸激活和显示窗口。
+SW_SHOWDEFAULT：依据在STARTUPINFO结构中指定的SW_FLAG标志设定显示状态，STARTUPINFO 结构是由启动应用程序的程序传递给CreateProcess函数的。
+SW_SHOWMAXIMIZED：激活窗口并将其最大化。
+SW_SHOWMINIMIZED：激活窗口并将其最小化。
+SW_SHOWMINNOACTIVE：窗口最小化，激活窗口仍然维持激活状态。
+SW_SHOWNA：以窗口原来的状态显示窗口。激活窗口仍然维持激活状态。
+SW_SHOWNOACTIVATE：以窗口最近一次的大小和状态显示窗口。激活窗口仍然维持激活状态。
+SW_SHOWNORMAL：激活并显示一个窗口。如果窗口被最小化或最大化，系统将其恢复到原来的尺寸和大小。应用程序在第一次显示窗口的时候应该指定此标志。
+
+/*****************************************************************************************************************************************************************
+
+
+五、wc.hbrBackground = (HBRUSH)GreateSolidBrush(TRANS_BK_COLOR); //具有指定颜色的逻辑刷子
+/*****************************************************************************************************************************************************************
+
+创建一个具有指定颜色的逻辑刷子
+函数CreateSolidBrush声明如下：
+WINGDIAPI HBRUSH WINAPI CreateSolidBrush( __in COLORREF color);
+color是画刷颜色。
+
+
+/*****************************************************************************************************************************************************************
+
+
+
+六、HDC hdc, hdcMem;//定义两个，作为内存缓存
+/*****************************************************************************************************************************************************************
+设备环境句柄和内存设备环境句柄
+
+/*****************************************************************************************************************************************************************
+
+七、case WM_CREATE://位图加载
+		MoveWindow(hwnd, 100, 100, 100, 100, TRUE);
+		hmpFlighter = LoadImage(NULL, "飞机2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);//作业：读LoadImage文档
+
+/*****************************************************************************************************************************************************************
+MoveWindow():功能是改变指定窗口的位置和大小。.对基窗口来说,位置和大小取决于屏幕的左上角;
+对子窗口来说,位置和大小取决于父窗口客户区的左上角.对于Owned窗口,位置和大小取决于屏幕左上角.
+
+函数原型:BOOL MoveWindow( HWND hWnd, int X, int Y, int nWidth, int nHeight, BOOL bRepaint );
+
+hWnd指定了窗口的句柄
+x指定了CWnd的左边的新位置。
+y指定了CWnd的顶部的新位置。
+nWidth指定了CWnd的新宽度。
+nHeight指定了CWnd的新高度。
+bRepaint指定了是否要重画CWnd。
+
+
+ LoadImage():装载图标，光标，或位图。
+函数原型：HANDLE LoadImage（HINSTANCE hinst,LPCTSTR lpszName，UINT uType，int cxDesired，int cyDesired，UINT fuLoad）；
+
+hinst：处理包含被装载图像模块的实例。若要装载OEM图像，则设此参数值为0。
+lpszName：处理图像装载。如果参数hinst为non-NULL ，而且参数fuLoad省略LR_LOADFROMFILE的值时，那么参数lpszName是一个指向保留在hinst模块中装载的图像资源名称，并以NULL为结束符的字符串。
+如果参数hinst为空，并且LR_LOADFROMFILE未被指定，那么这个参数低位字一定是被装载的OEM图像标识的。OEM图像标识符是在WINUSER.H头文件中定义的，下面列举出前缀的含义：
+OBM_ OEM：位图；OIC_OEM图标；OCR_OEM：光标。
+如果参数fuLoad包含LR_LOADFROMFILE值，那么参数lpszName是包含有图像的文件名。
+uType：指定被装载图像类型。此参数可以为下列值，其含义如下：
+IMAGE_BITMAP：装载位图；IMAGE_CURSOR：装载光标；IMAGE_ICON：装载图标。
+cxDesired：指定图标或光标的宽度，以像素为单位。如果此参数为零并且参数fuLoad值为LR_DEFAULTSIZE，那么函数使用SM_CXICON或SM_CXCURSOR系统公制值设定宽度；如果此参数为零并且值LR_DEFAULTSIZE没有被使用，那么函数使用目前的资源宽度。
+cyDesired：指定图标或光标的高度，以像素为单位。如果此参数为零并且参数fuLoad值为LR_DEFAULTSIZE，那么函数使用SM_CXICON或SM_CXCURSOR系统公制值设定高度；如果此参数为零并且值LR_DEFAULTSIZE没有被使用，那么函数使用目前的资源高度。
+
+/*****************************************************************************************************************************************************************
+
+八、case WM_PAINT:
+		hdc = BeginPaint(hwnd, &ps);//作业，通知操作系统画图，返回DC对象【指定窗口进行绘图工作的准备，并用将和绘图有关的信息填充到一个PAINTSTRUCT结构中】
+		hdcMem = CreateCompatibleDC(hdc);//内存DC,作业；文档
+		SelectObject(hdcMem, hmpFlighter);//将位图选择到hdcMem中使窗体支持透明
+
+		GetClientRect(hwnd, &rect);
+		//BitBlt(hdc, 0, 0,1024,1024, hdcMem, 0, 0, SRCCOPY);//将内存中的内容复制到hdc中,图片不能拉伸
+		StretchBlt(hdc, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, hdcMem, 0, 0, 175, 160, SRCCOPY);//图片能够拉伸
+
+
+		DeleteDC(hdcMem);
+		EndPaint(hwnd, &ps);
+
+		//GamePaint(hwnd);
+		break;
+
+/*****************************************************************************************************************************************************************
+
+
+BeginPaint():为指定窗口进行绘图工作的准备，并用将和绘图有关的信息填充到一个PAINTSTRUCT结构中。
+函数原型：HDC BeginPaint(HWND hwnd, // 窗口的句柄
+                         PPAINTSTRUCT lpPaint // 绘制信息);
+
+每次调用BeginPaint都应该有相应的EndPaint函数。
+
+hwnd:[输入]被重绘的窗口句柄
+lpPaint:[输出]指向一个用来接收绘画信息的PAINTSTRUCT结构
+
+/*****************************************************************************************************************************************************************
+
+
+九、wc.hIcon = LoadIcon(NULL,  // hIcon成员用来指定窗口的图标
+		IDI_APPLICATION);   // 这里直接使用LoadIcon函数加载了一个系统预定义的图标，开发人员可也可以自己创建图标。
+	wc.hCursor = LoadCursor(NULL, // Cursor是鼠标光标，这里是设定了鼠标光标的样式。
+		IDC_HAND);   // 直接使用LoadCursor API函数载入了一个系统预定义的光标样式，还有IDC_CROSS,IDC_HAND等样式 
+	wc.hbrBackground = (HBRUSH)GetStockObject( // GetStockObject的功能是加载一个系统预定义（在栈中）的GDI对象，
+		WHITE_BRUSH);  // 这里加载的是一个白色的画刷，有关画刷和GDI对象，详见GDI说明。
+
+
+十、	case WM_CREATE://位图加载
+		hmpSky = LoadImage(NULL, "sky.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);//作业：读LoadImage文档
+
+/*LoadImage:*/
+
+		if (hmpSky == NULL)
+		{
+			MessageBox(hwnd, "位图未找到！", "ERROE!", MB_OK | MB_ICONERROR);//作业：文档
+			ExitProcess(0);
+
+		}
+		//ReSizeGameWnd(hwnd);
+
+		if (RegisterFighterClass())
+		{
+			CreateFlighterWindows();
+		}
+		break;
+
+
+十一、MessageBox(hwnd, "位图未找到！", "ERROE!", MB_OK | MB_ICONERROR);//作业：文档
+
+十二、	hmpFlighter = LoadImage(NULL, "飞机2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
